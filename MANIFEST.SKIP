@@ -1,0 +1,16 @@
+# Version control files and dirs.
+\bRCS\b
+\bCVS\b
+,v$
+
+# Makemaker generated files and dirs.
+^MANIFEST\.
+^Makefile$
+^blib/
+^MakeMaker-\d
+pm_to_blib
+
+# Module::Build
+_build/
+.tar.gz$
+Build
