@@ -1,18 +1,18 @@
 --- #YAML:1.0
 name: URI-Find-Rule
-version: 0.5
+version: 0.6
+author:
+  - |-
+    Copyright (C) 2004, Rob Partington <perl-ufr@frottage.org>
+abstract: Simpler interface to URI::Find
 license: perl
-distribution_type: module
 requires:
   Test::More: 0
   Text::Glob: 0
   URI: 0
   URI::Find: 0
-recommends: {}
-build_requires: {}
-conflicts: {}
 provides:
   URI::Find::Rule:
     file: lib/URI/Find/Rule.pm
-    version: 0.5
-generated_by: Module::Build version 0.19
+    version: 0.6
+generated_by: Module::Build version 0.25

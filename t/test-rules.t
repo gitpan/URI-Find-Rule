@@ -1,7 +1,7 @@
 #!perl -w
 use URI::Find::Rule;
 use Data::Dumper;
-use Test::More tests => 41;
+use Test::More tests => 51;
 
 my $png = 'http://ipy.frottage.org/rjp/2003/09/07/definitely.png';
 my $cgi = 'http://ipy.frottage.org/cgi-bin/rjp/env.cgi?query=frottage';
@@ -29,12 +29,12 @@ ok( URI::eq($a[3]->[1], $cgi) , 'uri');
 ok( URI::eq($a[4]->[1], $fragment) , 'uri');
 ok( URI::eq($a[5]->[1], $auth) , 'uri');
 
+# you can shortcut ->scheme('http') to ->http
 my @http = URI::Find::Rule->http()->in($text);
 is_deeply(\@a, \@http, 'found all @http in $text');
 
 @a = URI::Find::Rule->host(qr/plig/)->in($text);
 is(scalar @a, 2, '2 plig uris');
-
 ok( URI::eq($a[0]->[1], 'http://plig.net/'), 'uri' );
 ok( URI::eq($a[1]->[1], 'ftp://ftp.plig.org/') , 'uri');
 
@@ -69,10 +69,17 @@ is_deeply(\@a, \@c);
 is(scalar @a, 1);
 ok( URI::eq($a[0]->[1], 'http://plig.net/') );
 
+# find news.easynet.co.uk
 @a = URI::Find::Rule->host('news.easynet.co.uk')->in($text);
 is(scalar @a, 1);
 is($a[0]->[1], $news);
 
+# check that ->news(x) converts to ->scheme('news')->host(x)
+@a = URI::Find::Rule->news(qr/easynet/)->in($text);
+is(scalar @a, 1);
+is($a[0]->[1], $news);
+
+# find all the URIs
 @a = URI::Find::Rule->in($text);
 is(scalar @a, 11);
 
@@ -101,3 +108,18 @@ ok( URI::eq($a[0]->[1], $ssl) );
 @a = URI::Find::Rule->userinfo(qr/rjp/)->in($text);
 is(scalar @a, 1);
 ok( URI::eq($a[0]->[1], $auth) );
+
+# find all the /tp$/ or ldap URIs
+@a = URI::Find::Rule->scheme(qr/tp$/, 'ldap')->in($text);
+is(scalar @a, 9);
+ok( URI::eq($a[0]->[1], 'http://plig.net') );
+# ok( URI::eq($a[-3]->[1], $ldap), 'ldap matches "ldap"' ); # MANGLED
+ok( URI::eq($a[-2]->[1], $nntp), 'nntp matches /tp$/' );
+ok( URI::eq($a[-1]->[1], $auth), 'correct last match for /tp$/ or "ldap"' );
+
+# check whether returning URI objects works
+@a = URI::Find::Rule->news(qr/easynet/)->in($text, 'objects');
+is(scalar @a, 1);
+isa_ok($a[0], 'URI');
+is( $a[0]->scheme, 'news', 'check object scheme matches' );
+is( $a[0]->message, 'slrnbnntv2.1n95.rjp@ipy.frottage.org', 'check news message-id' );
