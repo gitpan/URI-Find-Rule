@@ -8,7 +8,7 @@ use Text::Glob 'glob_to_regex';
 
 use Data::Dumper;
 
-$VERSION = '0.6';
+$VERSION = '0.8';
 
 sub _force_object {
     my $object = shift;
@@ -28,16 +28,22 @@ sub _flatten {
 
 sub in {
     my $self = _force_object shift;
-    my $return_objects = $_[1]; # can't shift $_[0]
+    my ($anonsub, $return_objects) = @_;
 
 	my @urls;
 	my $sub = sub {
 		my ($original, $uri) = @_;
         my $uri_object = URI->new($uri);
         my $keep = 1;
+        my $negate_next = 0;
         foreach my $i (@{ $self->{rules} }) {
-            my $result = &{$i->{code}}($original, $uri, $uri_object);
-            $keep = $keep & $result;
+            if ($i->{rule} eq 'not') {
+                $negate_next = 1;
+            } else {
+                my $result = &{$i->{code}}($original, $uri, $uri_object);
+                $keep = $keep & ($negate_next ^ $result);
+                $negate_next = 0;
+            }
         }
         if ($keep) {
             if ($return_objects) {
@@ -49,7 +55,7 @@ sub in {
 		return $original;
 	};
 	my $finder = URI::Find->new($sub);
-	$finder->find(\$_[0]);
+	$finder->find(\$anonsub);
 	return @urls;
 }
 
@@ -59,6 +65,12 @@ sub new {
     my $self = bless {
         rules => []
     }, $class;
+    return $self;
+}
+
+sub not {
+    my $self = _force_object shift;
+    push @{ $self->{rules} }, { rule => 'not' };
     return $self;
 }
 
@@ -176,6 +188,12 @@ C<($original_text, $uri)> for each URI found in C<$text>.
 With a true-valued second argument, it returns a list of URI objects,
 one for each URI found in C<$text>.
 
+=head2 not
+
+  URI::Find::Rule->http()->not()->host(qr/frottage/)->in($text);
+
+Negates the immediately following rule.
+
 =head2 scheme
 
   URI::Find::Rule->scheme('http')->in($text);
@@ -207,15 +225,13 @@ C<< URI->can() >> needs a URI before it'll respond -- at the moment, this
 is C<http://x:y@a/b#c?d> which means that any of the scheme-specific
 methods (like C<< $uri->dn >> for LDAP URIs can't be used.)
 
-There's no C<< ->not >> functionality at the moment or any kind of logical
-combining other than the simplistic OR of C<< ->thing('this','that') >>.
-
 The anonymous arrays contain the original text and the stringified URI in
 reverse order when compared with URI::Find's callback.  This may confuse.
 
 =head1 CREDITS
 
 Richard Clamp (patches, code to cargo cult from)
+John Levon (pointing out broken comments and complexity)
 
 =head1 LICENSE
 

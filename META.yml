@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: URI-Find-Rule
-version: 0.6
+version: 0.8
 author:
   - |-
     Copyright (C) 2004, Rob Partington <perl-ufr@frottage.org>
@@ -14,5 +14,5 @@ requires:
 provides:
   URI::Find::Rule:
     file: lib/URI/Find/Rule.pm
-    version: 0.6
+    version: 0.8
 generated_by: Module::Build version 0.25

@@ -2,6 +2,7 @@
 \bRCS\b
 \bCVS\b
 ,v$
+\bsvn\b
 
 # Makemaker generated files and dirs.
 ^MANIFEST\.

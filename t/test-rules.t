@@ -1,7 +1,7 @@
 #!perl -w
 use URI::Find::Rule;
 use Data::Dumper;
-use Test::More tests => 51;
+use Test::More tests => 69;
 
 my $png = 'http://ipy.frottage.org/rjp/2003/09/07/definitely.png';
 my $cgi = 'http://ipy.frottage.org/cgi-bin/rjp/env.cgi?query=frottage';
@@ -59,6 +59,10 @@ is(scalar @b, 1, 'http: /plig/, 1 match');
 is_deeply(\@a, \@b);
 
 @a = URI::Find::Rule->scheme('http')->host(qr/plig/, qr/frottage/)->in($text);
+is(scalar @a, 5, 'scheme: http, host: /plig/ or /frottage/, 5 matches');
+
+# test flattening array refs
+@a = URI::Find::Rule->scheme('http')->host([qr/plig/, qr/frottage/])->in($text);
 is(scalar @a, 5, 'scheme: http, host: /plig/ or /frottage/, 5 matches');
 
 my @c = URI::Find::Rule->http(qr/plig/, qr/frottage/)->in($text);
@@ -123,3 +127,36 @@ is(scalar @a, 1);
 isa_ok($a[0], 'URI');
 is( $a[0]->scheme, 'news', 'check object scheme matches' );
 is( $a[0]->message, 'slrnbnntv2.1n95.rjp@ipy.frottage.org', 'check news message-id' );
+
+@a = URI::Find::Rule->host(qr/plig/)->not()->protocol(qr/ftp/)->in($text, 1);
+is(scalar @a, 1, 'plig & not(http)');
+isa_ok($a[0], 'URI');
+is( $a[0]->scheme, 'http', 'check object scheme matches' );
+is( $a[0]->host, 'plig.net', 'check object host matches' );
+
+@a = URI::Find::Rule->not()->protocol('http')->in($text, 1);
+is(scalar @a, 5, 'not(http)');
+isa_ok($a[0], 'URI');
+is( $a[0]->scheme, 'ftp', 'check object scheme matches' );
+is( $a[0]->host, 'ftp.plig.org', 'check ftp object host matches' );
+is( $a[1]->scheme, 'ldap', 'check ldap object scheme matches' );
+is( $a[2]->scheme, 'news', 'check news object scheme matches' );
+
+@a = URI::Find::Rule->not()->protocol('http')->protocol('ldap')->in($text, 1);
+is(scalar @a, 1, 'not(http) && ldap');
+isa_ok($a[0], 'URI');
+is( $a[0]->scheme, 'ldap', 'check ldap object scheme matches' );
+
+my $rule = URI::Find::Rule->new();
+$rule->not()->protocol('http');
+$rule->protocol('ldap');
+@a = $rule->in($text, 1);
+is(scalar @a, 1, 'not(http) && ldap');
+isa_ok($a[0], 'URI');
+is( $a[0]->scheme, 'ldap', 'check ldap object scheme matches' );
+
+# test creating a new object from an existing one
+my $newrule = $rule->new();
+$newrule->protocol('ldap');
+@a = $newrule->in($text, 1);
+is(scalar @a, 1, 'ldap, new object from existing object');
